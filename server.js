@@ -1,0 +1,41 @@
+const express = require('express')
+const cors = require('cors')
+require('dotenv').config()
+
+const { get, post } = require('./src/routes/composition')
+const { get: getEvents } = require('./src/routes/events')
+const { get: getRunners } = require('./src/routes/runners')
+const { Server } = require('socket.io')
+const { init } = require('./src/socket')
+
+const app = express()
+const port = 3000
+
+app.get('/', (req, res) => {
+    res.send('Hello World!')
+})
+
+app.use(cors())
+app.use(express.json())
+
+app.get('/composition', get)
+app.post('/composition', post)
+app.get('/events', getEvents)
+app.get('/runners', getRunners)
+
+let server = app.listen(port, (err) => {
+    if (err) {
+        console.error('Error starting the server:', err)
+        return
+    }
+    console.log(`BTRL Compositor Backend listening on port ${port}`)
+})
+
+const io = new Server(server, {
+    cors: {
+        origin: "http://localhost:5173",
+        methods: ["GET", "POST"],
+        credentials: false
+    }
+})
+init(io)
