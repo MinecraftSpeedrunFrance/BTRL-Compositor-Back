@@ -57,8 +57,9 @@ async function get(req, res) {
             const entry = { uuid: account.uuid }
             entry.live = true
             entry.twitch = liveRun.user.liveAccount
-            entry.split = liveRun.eventList[liveRun.eventList.length - 1]
             entry.nickname = liveRun.nickname
+            entry.split = liveRun.eventList[liveRun.eventList.length - 1]
+            entry.items = liveRun?.itemData?.estimatedCounts
             results.push(entry)
         } else {
             promises.push(checkTwitch(account).then(entry => {
@@ -82,6 +83,8 @@ async function checkTwitch(account) { // TODO cache for 30 seconds
         }
         if (entry.live) {
             entry.twitch = twitchStatuses.find(status => status.live).twitch
+        } else { // todo remoeve?
+            entry.twitch = account.twitches?.[0] ?? null // Return the first Twitch account if available
         }
         return entry
     } catch (error) {

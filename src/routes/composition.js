@@ -1,10 +1,6 @@
 const { sendCompositionChange } = require("../socket")
 
-let currentComposition = [{
-    uuid: '02833f8a-73ca-4be0-a54a-aa48c3fac9a7',
-    nickname: 'xAurore_',
-    twitch: 'xaurore_'
-}]
+let currentComposition = []
 
 function get(_, res) {
     return res.json(currentComposition)
@@ -13,7 +9,6 @@ function get(_, res) {
 function post(req, res) {
     let newComposition = req.body
     const changes = computeChanges(newComposition)
-    console.log(changes)
     currentComposition = req.body
 
     res.status(200).json({ message: 'Composition updated successfully' })
