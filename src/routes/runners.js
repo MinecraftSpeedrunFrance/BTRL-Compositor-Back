@@ -23,8 +23,8 @@ async function get(req, res) {
         }
     }
 
-    if (!event && eventId !== 'none') {
-        return res.status(404).json({ message: 'Event not found' })
+    if (!event || eventId === 'none') {
+        return res.json([])
     }
 
     // Get the live runs from the paceman API and filter them based on the event's whitelist
@@ -48,7 +48,7 @@ async function get(req, res) {
         appCache.set(`${eventId}_twitchAccounts`, twitchAccounts, 1000 * 60 * 60 * 12) // Cache for 12 hours
     }
 
-    const results = []
+    const results = {}
     let promises = []
 
     for (const account of twitchAccounts) {
@@ -60,17 +60,38 @@ async function get(req, res) {
             entry.nickname = liveRun.nickname
             entry.split = liveRun.eventList[liveRun.eventList.length - 1]
             entry.items = liveRun?.itemData?.estimatedCounts
-            results.push(entry)
+            results[account.uuid] = entry
         } else {
             promises.push(checkTwitch(account).then(entry => {
-                results.push(entry)
+                results[entry.uuid] = entry
             }))
         }
     }
 
+    let pbPromise = getPbs(whitelist, eventId)
+    let completionsPromise = getCompletions(eventId)
+
     await Promise.all(promises)
+    try {
+        const pbs = await pbPromise
+        for (const pb of pbs) {
+            results[pb.uuid].pb = pb.pb
+        }
+    } catch (error) {
+        console.log('Failed to fetch pb of players', error);
+    }
+
+    try {
+        const completions = await completionsPromise
+        for (const completion of completions) {
+            results[completion.uuid].btrl = completion.time
+        }
+    } catch (error) {
+        console.log('Failed to fetch completions of players for event ', eventId, error);
+    }
+
     console.timeEnd('route')
-    return res.json(results)
+    return res.json(Object.values(results))
 }
 
 async function checkTwitch(account) { // TODO cache for 30 seconds
@@ -91,6 +112,24 @@ async function checkTwitch(account) { // TODO cache for 30 seconds
         console.error(`Error checking Twitch status for user ${account.uuid}:`, error)
         return { uuid: account.uuid, live: false, nickname: account.nickname }
     }
+}
+
+async function getPbs(whitelist, eventId) {
+    if (appCache.has(`pbs_${eventId}`)) {
+        return appCache.get(`pbs_${eventId}`)
+    }
+    const pbs = await (await fetch(`https://paceman.gg/stats/api/getPBs/?uuids=${whitelist.join(',')}`)).json()
+    appCache.set(`pbs_${eventId}`, pbs, 1000 * 60 * 10) // Cache for 10 minutes
+    return pbs
+}
+
+async function getCompletions(eventId) {
+    if (appCache.has(`completions_${eventId}`)) {
+        return appCache.get(`completions_${eventId}`)
+    }
+    const completions = await (await fetch(`https://paceman.gg/api/get-event-completions?eventId=${eventId}&usePoints=false`)).json()
+    appCache.set(`completions_${eventId}`, completions, 1000 * 60 * 10) // Cache for 10 minutes
+    return completions
 }
 
 module.exports = { get }
