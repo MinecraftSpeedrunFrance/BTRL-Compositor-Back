@@ -38,6 +38,5 @@ const io = new Server(server, {
         methods: ["GET", "POST"],
         credentials: false
     },
-    path: process.env.REVERSE_PROXY_PATH || '/socket.io'
 })
 init(io)
