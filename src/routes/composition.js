@@ -1,23 +1,21 @@
-const { sendCompositionChange } = require("../socket")
-
-let currentComposition = []
+let { sendCompositionChange, state } = require("../socket")
 
 function get(_, res) {
-    return res.json(currentComposition)
+    return res.json(state.currentComposition)
 }
 
 function post(req, res) {
     let newComposition = req.body
     const changes = computeChanges(newComposition)
-    currentComposition = req.body
+    state.currentComposition = req.body
 
     res.status(200).json({ message: 'Composition updated successfully' })
     sendCompositionChange(changes)
 }
 
 function computeChanges(newComposition) {
-    let newPovs = newComposition.filter(pov => !currentComposition.some(currentPov => currentPov.uuid === pov.uuid))
-    let removedPovs = currentComposition.filter(pov => !newComposition.some(newPov => newPov.uuid === pov.uuid))
+    let newPovs = newComposition.filter(pov => !state.currentComposition.some(currentPov => currentPov.uuid === pov.uuid))
+    let removedPovs = state.currentComposition.filter(pov => !newComposition.some(newPov => newPov.uuid === pov.uuid))
 
     let changes = []
     let newIndex = 0

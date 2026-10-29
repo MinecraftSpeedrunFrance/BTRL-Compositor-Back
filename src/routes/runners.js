@@ -1,3 +1,4 @@
+const { updateStats } = require('../socket')
 const { appCache } = require('../utils/cache')
 const { checkChannelStatus } = require('../utils/twitch')
 const { getEvents } = require('./events')
@@ -90,6 +91,12 @@ async function get(req, res) {
         console.log('Failed to fetch completions of players for event ', eventId, error);
     }
 
+    try {
+        updateStats(results)
+    } catch (error) {
+        console.log('Failed to update stats', error);
+    }
+
     console.timeEnd('route')
     return res.json(Object.values(results))
 }
@@ -104,7 +111,7 @@ async function checkTwitch(account) { // TODO cache for 30 seconds
         }
         if (entry.live) {
             entry.twitch = twitchStatuses.find(status => status.live).twitch
-        } else { // todo remoeve?
+        } else { // todo remove?
             entry.twitch = account.twitches?.[0] ?? null // Return the first Twitch account if available
         }
         return entry
@@ -128,7 +135,7 @@ async function getCompletions(eventId) {
         return appCache.get(`completions_${eventId}`)
     }
     const completions = await (await fetch(`https://paceman.gg/api/get-event-completions?eventId=${eventId}&usePoints=false`)).json()
-    appCache.set(`completions_${eventId}`, completions, 1000 * 60 * 10) // Cache for 10 minutes
+    appCache.set(`completions_${eventId}`, completions, 1000 * 60) // Cache for a minute
     return completions
 }
 

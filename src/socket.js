@@ -1,4 +1,5 @@
 let io = null
+const state = { currentComposition: [] }
 
 function init(newIo) {
     io = newIo
@@ -17,4 +18,37 @@ function sendCompositionChange(changes) {
     io.emit('compositionChanged', changes)
 }
 
-module.exports = { init, sendCompositionChange }
+async function updateStats(runners) {
+    if (!io) return
+
+    const changes = []
+    for (const pov of state.currentComposition) {
+        const runner = runners[pov.uuid]
+        const change = {
+            uuid: pov.uuid,
+        }
+        let dirty = false
+        if (runner?.btrl !== pov?.btrl) {
+            change.btrl = runner.btrl
+            pov.btrl = runner.btrl
+            dirty = true
+        }
+        if (JSON.stringify(runner?.items ?? {}) != JSON.stringify(pov?.items ?? {})) {
+            change.items = runner.items
+            pov.items = runner.items
+            dirty = true
+        }
+        // if (runner.split !== pov.split) {
+        //     change.split = runner.split
+        //     pov.split = runner.split
+        // }
+        if (dirty) {
+            changes.push(change)
+        }
+    }
+    if (changes.length > 0) {
+        io.emit('statsChanged', changes)
+    }
+}
+
+module.exports = { init, sendCompositionChange, updateStats, state }
