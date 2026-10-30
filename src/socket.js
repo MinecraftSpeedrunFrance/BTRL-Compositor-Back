@@ -28,6 +28,11 @@ async function updateStats(runners) {
             uuid: pov.uuid,
         }
         let dirty = false
+        if (runner?.split?.eventId === 'finish' && runner?.items) {
+            runner.items = {}
+            change.items = {}
+            dirty = true
+        }
         if (runner?.btrl !== pov?.btrl) {
             change.btrl = runner.btrl
             pov.btrl = runner.btrl

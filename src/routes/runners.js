@@ -134,9 +134,15 @@ async function getCompletions(eventId) {
     if (appCache.has(`completions_${eventId}`)) {
         return appCache.get(`completions_${eventId}`)
     }
-    const completions = await (await fetch(`https://paceman.gg/api/get-event-completions?eventId=${eventId}&usePoints=false`)).json()
-    appCache.set(`completions_${eventId}`, completions, 1000 * 60) // Cache for a minute
-    return completions
+
+    try {
+        const completions = await (await fetch(`https://paceman.gg/api/get-event-completions?eventId=${eventId}&usePoints=false`)).json()
+        appCache.set(`completions_${eventId}`, completions, 1000 * 60) // Cache for a minute
+        return completions
+    } catch (error) {
+        console.error(`Error fetching completions for event ${eventId}:`, error)
+        return []
+    }
 }
 
 module.exports = { get }
