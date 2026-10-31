@@ -28,9 +28,9 @@ async function updateStats(runners) {
             uuid: pov.uuid,
         }
         let dirty = false
-        if (runner?.split?.eventId === 'finish' && runner?.items) {
+        if (runner?.split?.eventId === 'rsg.credits' && runner?.items) {
             runner.items = {}
-            change.items = {}
+            change.items = 'clear' // empty object properties are trimmed by the websocket
             dirty = true
         }
         if (runner?.btrl !== pov?.btrl) {
@@ -39,7 +39,7 @@ async function updateStats(runners) {
             dirty = true
         }
         if (JSON.stringify(runner?.items ?? {}) != JSON.stringify(pov?.items ?? {})) {
-            change.items = runner.items
+            change.items = Object.keys(runner?.items ?? {}).length === 0 ? 'clear' : runner.items
             pov.items = runner.items
             dirty = true
         }
